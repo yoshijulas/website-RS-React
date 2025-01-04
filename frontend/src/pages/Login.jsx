@@ -8,19 +8,18 @@ function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   useEffect(() => {
     const checkToken = async () => {
       const token = localStorage.getItem("Authorization");
       if (token) {
         try {
-          const response = await axios.get(
-            "http://localhost:4000/validate_token",
-            {
-              headers: {
-                Authorization: token,
-              },
+          const response = await axios.get(`${backendUrl}/validate_token`, {
+            headers: {
+              Authorization: token,
             },
-          );
+          });
           console.log(response.data.user_id);
           if (response.status === 200) {
             navigate(`/profile/${response.data.user_id}`);

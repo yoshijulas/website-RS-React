@@ -7,6 +7,7 @@ function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -17,14 +18,11 @@ function Profile() {
       }
 
       try {
-        const response = await axios.get(
-          `http://localhost:4000/profile/${userId}`,
-          {
-            headers: {
-              Authorization: token,
-            },
+        const response = await axios.get(`${backendUrl}/profile/${userId}`, {
+          headers: {
+            Authorization: token,
           },
-        );
+        });
         setUser(response.data);
       } catch (error) {
         console.error(error);
