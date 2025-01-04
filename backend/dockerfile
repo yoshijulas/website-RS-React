@@ -1,0 +1,44 @@
+# Stage 1: Build the application
+FROM rust:bookworm AS builder
+# Install nightly toolchain and set it as the default
+RUN rustup install nightly && rustup override set nightly
+
+WORKDIR /usr/src/website-test
+
+# Create a blank project
+RUN cargo init
+# First, copy only Cargo files to utilize layer caching
+COPY Cargo.toml Cargo.lock ./
+# Copy source files and build the application
+RUN cargo build --release
+
+COPY . .
+
+RUN echo "// force Cargo cache invalidation" >> src/main.rs
+
+# Enable offline mode for sqlx in order to avoid SQL database connection errors
+ENV SQLX_OFFLINE=true
+
+# Copy the sqlx configuration files into the container, this gives SQLX the
+# information it needs to validate the SQL queries at compile time
+COPY ./.sqlx/ ./.sqlx/
+
+# Install the binary globally
+RUN cargo install --path . 
+# Stage 2: Set up the runtime environment
+FROM debian:bookworm-slim
+# Install necessary dependencies (e.g., libssl-dev for PostgreSQL and other rust libraries)
+RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Copy the binary from the builder stage to the runtime container
+COPY --from=builder /usr/local/cargo/bin/website-test /usr/local/bin/websitetest
+
+WORKDIR /app
+
+COPY .docker.env .env
+
+EXPOSE 4000
+
+# Set the entrypoint to the `website-test` binary
+CMD ["websitetest"]
+
