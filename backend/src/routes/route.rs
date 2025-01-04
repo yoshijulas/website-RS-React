@@ -9,7 +9,10 @@ use tower_http::cors::{Any, CorsLayer};
 pub async fn create_routes() -> Router {
     let pool = db::establish_connection().await;
 
-    let origins = ["http://localhost:4000".parse().unwrap()];
+    let origins = [
+        "http://localhost:3000".parse().unwrap(),
+        "http://frontend:3000".parse().unwrap(),
+    ];
 
     Router::new()
         .route("/signup", post(sign_up))
