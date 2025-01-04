@@ -7,7 +7,7 @@ use axum::{
 use tower_http::cors::{Any, CorsLayer};
 
 pub async fn create_routes() -> Router {
-    let mut pool = db::establish_connection().await;
+    let pool = db::establish_connection().await;
 
     let origins = ["http://localhost:4000".parse().unwrap()];
 
@@ -16,7 +16,7 @@ pub async fn create_routes() -> Router {
         .route("/login", post(login))
         .route("/profile/{user_id}", get(profile))
         .route("/validate_token", get(validate_token))
-        .with_state(&mut pool)
+        .with_state(pool)
         .layer(
             CorsLayer::new()
                 .allow_origin(origins)

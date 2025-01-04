@@ -1,10 +1,7 @@
 use crate::auth::hash_password;
-use crate::models::schema::users::{self, dsl::*};
-use axum::http::{StatusCode, status};
-use axum::{Json, extract::State};
-use diesel::{ExpressionMethods, QueryDsl};
-use diesel_async::{AsyncPgConnection, RunQueryDsl};
+use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 
 #[derive(Deserialize)]
 pub struct SignUpInput {
@@ -20,62 +17,46 @@ pub struct ApiResponse {
 }
 
 pub async fn sign_up(
-    State(pool): State<&mut AsyncPgConnection>,
+    State(pool): State<PgPool>,
     Json(payload): Json<SignUpInput>,
-) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
-    // Hash the password
+) -> Result<Json<ApiResponse>, (StatusCode, String)> {
     let hashed_password = hash_password(&payload.password);
 
-    let existing_user = users
-        .filter(email.eq(&payload.email))
-        .limit(1)
-        .select(id)
-        .load::<id>(&mut pool)
+    let existing_user = sqlx::query("SELECT * FROM users WHERE email = $1 LIMIT 1")
+        .bind(&payload.email)
+        .fetch_optional(&pool)
         .await
         .map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse {
-                    message: "Failed to query the database".to_string(),
-                    created: false,
-                }),
+                "Failed to create user".to_string(),
             )
         })?;
 
-    if existing_user.len() > 0 {
+    if existing_user.is_some() {
         return Err((
             StatusCode::BAD_REQUEST,
-            Json(ApiResponse {
-                message: "Username is already in use".to_string(),
-                created: false,
-            }),
+            "Username is already in use".to_string(),
         ));
     }
 
-    let new_user = users {
-        username: payload.username,
-        email: payload.email,
-        password: hashed_password,
-    };
+    sqlx::query!(
+        "INSERT INTO users (username, email, password) VALUES ($1, $2, $3)",
+        &payload.username,
+        &payload.email,
+        &hashed_password,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|x| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to create user: {x:?}"),
+        )
+    })?;
 
-    match diesel::insert_into(users)
-        .values(new_user)
-        .get_result(&mut pool)
-        .await
-    {
-        Ok(_) => Ok(Json(ApiResponse {
-            message: "User created successfully".to_string(),
-            created: true,
-        })),
-        Err(err) => {
-            eprintln!("Database error: {err:?}");
-            Err((
-                StatusCode::NOT_MODIFIED,
-                Json(ApiResponse {
-                    message: "Failed to create user".to_string(),
-                    created: false,
-                }),
-            ))
-        }
-    }
+    Ok(Json(ApiResponse {
+        message: "User created successfully".to_string(),
+        created: true,
+    }))
 }

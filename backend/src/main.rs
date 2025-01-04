@@ -1,7 +1,5 @@
 mod auth;
 mod db;
-mod entities;
-mod models;
 mod routes;
 use crate::routes::route::create_routes;
 use std::net::SocketAddr;

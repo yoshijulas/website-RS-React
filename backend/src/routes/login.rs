@@ -1,10 +1,7 @@
-use crate::{
-    auth::{generate_jwt, verify_password},
-    entities::{prelude::*, users},
-};
+use crate::auth::{generate_jwt, verify_password};
 use axum::{Json, extract::State, http::StatusCode};
-use diesel_async::AsyncPgConnection;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 
 #[derive(Deserialize)]
 pub struct LoginInput {
@@ -20,19 +17,21 @@ pub struct LoginResponse {
 }
 
 pub async fn login(
-    State(pool): State<&mut AsyncPgConnection>,
+    State(pool): State<PgPool>,
     Json(payload): Json<LoginInput>,
 ) -> Result<Json<LoginResponse>, (StatusCode, String)> {
-    let user = Users::find()
-        .filter(users::Column::Email.eq(&payload.email))
-        .one(&pool)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to check if email exists".to_string(),
-            )
-        })?;
+    let user = sqlx::query!(
+        "SELECT * FROM users WHERE email = $1 LIMIT 1",
+        &payload.email
+    )
+    .fetch_optional(&pool)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to check if email exists".to_string(),
+        )
+    })?;
 
     if user.is_none() {
         return Err((StatusCode::NOT_FOUND, "User not found".to_string()));
@@ -47,5 +46,6 @@ pub async fn login(
             token: Some(token),
         }));
     }
+
     Err((StatusCode::UNAUTHORIZED, "Invalid password".to_string()))
 }
