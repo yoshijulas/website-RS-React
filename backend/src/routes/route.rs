@@ -1,4 +1,9 @@
-use super::{login::login, profile::profile, signup::sign_up, validate::validate_token};
+use super::{
+    login::login,
+    profile::{get_profile, patch_profile},
+    signup::sign_up,
+    validate::validate_token,
+};
 use crate::db;
 use axum::{
     Router,
@@ -12,13 +17,15 @@ pub async fn create_routes() -> Router {
     let origins = [
         "http://localhost:3000".parse().unwrap(),
         "http://frontend:3000".parse().unwrap(),
+        "http://localhost:5173".parse().unwrap(),
+        "http://frontend:5173".parse().unwrap(),
     ];
 
     Router::new()
         .route("/signup", post(sign_up))
         .route("/login", post(login))
-        .route("/profile/{user_id}", get(profile))
-        .route("/validate_token", get(validate_token))
+        .route("/users/{user_id}", get(get_profile).patch(patch_profile))
+        .route("/validate", get(validate_token))
         .with_state(pool)
         .layer(
             CorsLayer::new()

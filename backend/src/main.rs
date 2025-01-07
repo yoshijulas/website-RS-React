@@ -1,5 +1,6 @@
 mod auth;
 mod db;
+mod errors;
 mod routes;
 use dotenvy::dotenv;
 

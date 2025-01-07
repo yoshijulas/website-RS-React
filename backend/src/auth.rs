@@ -38,9 +38,8 @@ pub fn generate_jwt(user_id: i32) -> String {
 
 pub fn validate_jwt(token: &Bearer) -> Result<i32, StatusCode> {
     let token = token.token();
-    let token = token.trim_start_matches("Bearer ").to_string();
     match decode::<Claims>(
-        &token,
+        token,
         &DecodingKey::from_secret(env::var("JWT_SECRET").unwrap().as_bytes()),
         &Validation::default(),
     ) {
