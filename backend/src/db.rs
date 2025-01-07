@@ -11,3 +11,10 @@ pub async fn establish_connection() -> PgPool {
         .await
         .unwrap_or_else(|_| panic!("Error connecting to {database_url}"))
 }
+
+pub async fn migration(pool: &PgPool) {
+    sqlx::migrate!("./migrations")
+        .run(pool)
+        .await
+        .expect("Error running migrations");
+}

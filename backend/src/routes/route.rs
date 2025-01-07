@@ -4,7 +4,7 @@ use super::{
     signup::sign_up,
     validate::validate_token,
 };
-use crate::db;
+use crate::db::{self, migration};
 use axum::{
     Router,
     routing::{get, post},
@@ -13,6 +13,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 pub async fn create_routes() -> Router {
     let pool = db::establish_connection().await;
+    migration(&pool).await;
 
     let origins = [
         "http://localhost:3000".parse().unwrap(),
