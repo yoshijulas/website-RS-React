@@ -22,10 +22,18 @@ pub async fn validate_token(
     }
 
     let user_id = token_data.unwrap();
-    let result = sqlx::query!("SELECT COUNT(1) FROM users WHERE id = $1 LIMIT 1", user_id)
-        .fetch_optional(&pool)
-        .await
-        .map_err(|_| AppError::InternalServerError("An unexpected error occurred".to_string()))?;
+    let result = sqlx::query!(
+        "
+        SELECT COUNT(1)
+        FROM users
+        WHERE id = $1
+        LIMIT 1
+        ",
+        user_id
+    )
+    .fetch_optional(&pool)
+    .await
+    .map_err(|_| AppError::InternalServerError("An unexpected error occurred".to_string()))?;
 
     if result.is_none() {
         return Err(AppError::NotFound("User not found".to_string()));

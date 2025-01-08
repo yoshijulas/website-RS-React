@@ -22,16 +22,23 @@ pub async fn sign_up(
 ) -> Result<Json<ApiResponse>, (StatusCode, String)> {
     let hashed_password = hash_password(&payload.password);
 
-    let existing_user = sqlx::query("SELECT * FROM users WHERE email = $1 LIMIT 1")
-        .bind(&payload.email)
-        .fetch_optional(&pool)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to create user".to_string(),
-            )
-        })?;
+    let existing_user = sqlx::query!(
+        "
+        SELECT *
+        FROM users
+        WHERE email = $1
+        LIMIT 1
+        ",
+        &payload.email
+    )
+    .fetch_optional(&pool)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to create user".to_string(),
+        )
+    })?;
 
     if existing_user.is_some() {
         return Err((
@@ -41,7 +48,10 @@ pub async fn sign_up(
     }
 
     sqlx::query!(
-        "INSERT INTO users (username, email, password) VALUES ($1, $2, $3)",
+        "
+        INSERT INTO users (username, email, password)
+        VALUES ($1, $2, $3)
+        ",
         &payload.username,
         &payload.email,
         &hashed_password,

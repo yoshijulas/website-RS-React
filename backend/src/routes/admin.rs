@@ -140,9 +140,9 @@ pub async fn patch_users(
 
     let result = sqlx::query!(
         "
-        SELECT * 
-        FROM users 
-        WHERE id = $1 
+        SELECT *
+        FROM users
+        WHERE id = $1
         LIMIT 1
         ",
         user_id
@@ -173,9 +173,9 @@ pub async fn patch_users(
 
     let result = sqlx::query!(
         "
-        UPDATE users 
-        SET username = COALESCE($1, username), 
-            email = COALESCE($2, email), 
+        UPDATE users
+        SET username = COALESCE($1, username),
+            email = COALESCE($2, email),
             password = COALESCE($3, password),
             role_id = COALESCE($4, role_id),
             status_id = COALESCE($5, status_id)

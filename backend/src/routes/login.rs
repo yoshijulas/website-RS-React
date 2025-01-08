@@ -21,7 +21,12 @@ pub async fn login(
     Json(payload): Json<LoginInput>,
 ) -> Result<Json<LoginResponse>, (StatusCode, String)> {
     let user = sqlx::query!(
-        "SELECT * FROM users WHERE email = $1 LIMIT 1",
+        "
+        SELECT *
+        FROM users
+        WHERE email = $1
+        LIMIT 1
+        ",
         &payload.email
     )
     .fetch_optional(&pool)

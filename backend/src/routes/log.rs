@@ -4,7 +4,7 @@ use sqlx::PgPool;
 pub async fn log_activity(pool: &PgPool, user_id: i32, activity: String) -> Result<(), AppError> {
     sqlx::query!(
         "
-        INSERT INTO activity_logs (user_id, user_action) 
+        INSERT INTO activity_logs (user_id, user_action)
         VALUES ($1, $2)
         ",
         user_id,
