@@ -2,9 +2,8 @@ mod auth;
 mod db;
 mod errors;
 mod routes;
-use dotenvy::dotenv;
-
 use crate::routes::route::create_routes;
+use dotenvy::dotenv;
 use std::env;
 
 #[tokio::main]
