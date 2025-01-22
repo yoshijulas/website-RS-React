@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::{
     admin::{get_role, get_users, patch_users},
     login::login,
@@ -11,9 +13,11 @@ use axum::{
     http::Method,
     routing::{get, patch, post},
 };
+use tower::limit::RateLimitLayer;
 use tower_http::cors::{Any, CorsLayer};
 
 pub async fn create_routes() -> Router {
+    let rate_limit_layer = RateLimitLayer::new(100, Duration::from_secs(60));
     let pool = db::establish_connection().await;
     migration(&pool).await;
 
